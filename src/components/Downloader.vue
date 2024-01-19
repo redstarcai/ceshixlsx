@@ -1,25 +1,23 @@
 <template>
   <div @click="download" style="height: 100%; display: flex; justify-content: center; align-items: center;">
-    {{ show_text || "导出pdf" }}
+    {{ show_text || "导出PDF" }}
   </div>
 </template>
 
 <script>
-import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import zionMdapi from "zion-mdapi";
 
 export default {
-  name: "PdfDownloader",
-  props: ["globalData", "show_text", "task_pk", "actionflow_name", "task_config", "download_config", "filename", "url", "actionflow_id"],
+  name: "PDFExporter",
+  props: ["show_text", "task_pk", "actionflow_name", "task_config", "download_config", "filename", "url", "actionflow_id"],
   data() {
     return {
       mdapi: null,
     }
   },
   mounted() {
-    console.log("props:", this.$props);
-    this.initMdapi();
+    this.initMadpi();
   },
 
   methods: {
@@ -28,31 +26,24 @@ export default {
       if (this.actionflow_name) {
         data = await this.queryDownloadTaskInfo();
       } else {
-        // 添加测试数据
         data = {
-          schema: [{
-            column: '测试标题',
-            type: "String",
-            value: "item => item.content"
-          }],
-          objects: [{ content: "测试内容xxx" }],
-          filename: this.filename || 'test.pdf'
-        };
+          objects: this?.download_config?.objects,
+          schema: this?.download_config?.schema,
+          filename: this.filename || 'test.pdf' // Change filename to PDF extension
+        }
       }
 
+      if (!data?.schema) {
+        data.schema = [{
+          content: '测试内容xxx' // Change to the content you want in the PDF
+        }]
+      }
+
+      const pdf = new jsPDF();
       data.schema.forEach(item => {
-        if (item?.type) {
-          item.type = eval(item.type)
-        }
-        if (item?.value) {
-          item.value = eval(item.value)
-        }
+        pdf.text(item.content, 10, 10); // Adjust the coordinates as needed
       });
 
-      const content = document.getElementById('pdf-content'); // 将此 ID 设置为你要导出的内容的容器的 ID
-      const canvas = await html2canvas(content);
-      const pdf = new jsPDF();
-      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, pdf.internal.pageSize.getWidth(), pdf.internal.pageSize.getHeight());
       pdf.save(data?.filename);
     },
 
@@ -64,31 +55,32 @@ export default {
           task_config: this.task_config,
           task_pk: this.task_pk
         }
-      }).catch(e => { return { data: {}, msg: e?.message || e, status: "失败" } })
+      }).catch(e => { return { data: {}, msg: e?.message || e, status: "失败" } });
 
       if (status !== "成功") {
-        console.error(msg, data)
+        console.error(msg, data);
       }
 
-      const { schema = [], objects = [], filename } = data;
+      const { objects = [], filename } = data;
 
       return {
-        schema,
-        objects,
+        schema: objects,
         filename
-      }
+      };
     },
 
     // 初始化mdapi
-    initMdapi() {
+    initMadpi() {
       this.mdapi = zionMdapi.init({
         url: this.url,
         actionflow_id: this.actionflow_id,
         env: "H5"
-      })
+      });
     }
   }
 }
 </script>
 
-<style></style>
+<style scoped>
+/* 样式可以根据需要进行定制 */
+</style>
