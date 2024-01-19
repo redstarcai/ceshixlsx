@@ -1,8 +1,9 @@
 <template>
-  <div @click="download" style="height: 100%;display: flex;justify-content: center;align-items: center;">
+  <div @click="download" style="height: 100%; display: flex; justify-content: center; align-items: center;">
     {{ show_text || "导出pdf" }}
   </div>
 </template>
+
 <script>
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
@@ -18,7 +19,7 @@ export default {
   },
   mounted() {
     console.log("props:", this.$props);
-    this.initMadpi();
+    this.initMdapi();
   },
 
   methods: {
@@ -27,22 +28,16 @@ export default {
       if (this.actionflow_name) {
         data = await this.queryDownloadTaskInfo();
       } else {
+        // 添加测试数据
         data = {
-          objects: this?.download_config?.objects,
-          schema: this?.download_config?.schema,
+          schema: [{
+            column: '测试标题',
+            type: "String",
+            value: "item => item.content"
+          }],
+          objects: [{ content: "测试内容xxx" }],
           filename: this.filename || 'test.pdf'
-        }
-      }
-
-      if (!data?.schema) {
-        data.schema = [{
-          column: '测试标题',
-          type: "String",
-          value: "item => item.content"
-        }]
-        if (!data?.objects) {
-          data.objects = [{ content: "测试内容xxx" }]
-        }
+        };
       }
 
       data.schema.forEach(item => {
@@ -85,7 +80,7 @@ export default {
     },
 
     // 初始化mdapi
-    initMadpi() {
+    initMdapi() {
       this.mdapi = zionMdapi.init({
         url: this.url,
         actionflow_id: this.actionflow_id,
@@ -95,4 +90,5 @@ export default {
   }
 }
 </script>
+
 <style></style>
