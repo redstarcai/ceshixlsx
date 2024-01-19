@@ -1,13 +1,15 @@
 <template>
   <div @click="download" style="height: 100%;display: flex;justify-content: center;align-items: center;">
-    {{ show_text || "导出excel" }}
+    {{ show_text || "导出pdf" }}
   </div>
 </template>
 <script>
-import writeXlsxFile from 'write-excel-file'
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 import zionMdapi from "zion-mdapi";
+
 export default {
-  name: "Downloader",
+  name: "PdfDownloader",
   props: ["globalData", "show_text", "task_pk", "actionflow_name", "task_config", "download_config", "filename", "url", "actionflow_id"],
   data() {
     return {
@@ -17,7 +19,6 @@ export default {
   mounted() {
     console.log("props:", this.$props);
     this.initMadpi();
-
   },
 
   methods: {
@@ -29,7 +30,7 @@ export default {
         data = {
           objects: this?.download_config?.objects,
           schema: this?.download_config?.schema,
-          filename: this.filename || 'test.xlsx'
+          filename: this.filename || 'test.pdf'
         }
       }
 
@@ -53,11 +54,13 @@ export default {
         }
       });
 
-      await writeXlsxFile(data?.objects, {
-        schema: data?.schema,
-        fileName: data?.filename
-      })
+      const content = document.getElementById('pdf-content'); // 将此 ID 设置为你要导出的内容的容器的 ID
+      const canvas = await html2canvas(content);
+      const pdf = new jsPDF();
+      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, pdf.internal.pageSize.getWidth(), pdf.internal.pageSize.getHeight());
+      pdf.save(data?.filename);
     },
+
     // 获取下载任务信息
     async queryDownloadTaskInfo() {
       const { data, msg, status } = await this.mdapi.callActionflow({
